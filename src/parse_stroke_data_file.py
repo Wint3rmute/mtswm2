@@ -9,7 +9,7 @@ DATA_FILE_NAMES = [
     "mi_np.txt",
 ]
 
-DATA_FILE_PATHS = ["stroke_data/" + path for path in DATA_FILE_NAMES]
+DATA_FILE_PATHS = ["../stroke_data/" + path for path in DATA_FILE_NAMES]
 
 
 def load_tsv_file(filename: str) -> np.array:
