@@ -5,7 +5,7 @@
 ## Progress
 
 - [x] Pierwsze zajęcia: Wprowadzenie do projektu, wybór tematów oraz grup projektowych.
-- [ ] Drugie zajęcia: Opis problemu medycznego jako zadania klasyfikacji oraz wyznaczenie rankingu cech pod względem ich przydatności do klasyfikacji.
+- [x] Drugie zajęcia: Opis problemu medycznego jako zadania klasyfikacji oraz wyznaczenie rankingu cech pod względem ich przydatności do klasyfikacji.
 - [ ] Trzecie zajęcia: Implementacja środowiska eksperymentowania.
 - [ ] Czwarte zajęcia: Przedstawienie wstępnych wyników eksperymentów oraz testów statystycznych. Próba sformułowania pierwszych wniosków.
 - [ ] Piąte zajęcia: Oddanie finalnej wersji projektu

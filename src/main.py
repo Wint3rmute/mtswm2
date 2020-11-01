@@ -6,7 +6,6 @@ from sklearn.feature_selection import chi2, mutual_info_classif
 
 if __name__ == "__main__":
 
-
     datas = get_all_data_files()
 
     (
