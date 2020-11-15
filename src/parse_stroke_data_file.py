@@ -28,3 +28,12 @@ def get_all_data_files() -> typing.List[np.array]:
         convert_tsv_data_to_scikit_compliant(load_tsv_file(data_file_path))
         for data_file_path in DATA_FILE_PATHS
     ]
+
+def get_dataset_x_y() -> typing.Tuple[np.array]:
+    datas = get_all_data_files()
+    scikit_compliant_x_matrix = np.concatenate([*datas])
+    scikit_compliant_y_matrix = np.concatenate(
+        [np.full(data.shape[0], index) for (index, data) in enumerate(datas)]
+    )
+
+    return scikit_compliant_x_matrix, scikit_compliant_y_matrix
