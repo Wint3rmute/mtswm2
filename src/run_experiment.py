@@ -1,3 +1,14 @@
+'''
+    Nie byliśmy pewni, jakie podejście przyjąć, żeby
+    zbudować sensowne środowisko eksperymentalne.
+
+    Postąpiliśmy następująco:
+        - Napisaliśmy funkcje parsujące otrzymany dataset do formatu kompatybilnego ze scikitem
+        - Wykorzystujemy k-krotną walidację krzyżową do oceny klasyfikatora
+        - Napisaliśmy skrypt sprawdzający wiele mozliwych ustawień klasyfikatora MLP
+        - Wyniki zapisywane są do pliku CSV, zamierzamy je później przeanalizować i znaleźć interesujące zakresy parametrów
+'''
+
 import itertools
 import warnings
 
@@ -12,6 +23,7 @@ import parse_stroke_data_file
 # TODO: MANAGE WITH THIS SOMEHOW
 warnings.filterwarnings('ignore') 
 
+# return MLPClassifier with custom arguments
 def get_mlp_classifier(
     solver="lbfgs",
     activation="relu",
@@ -66,8 +78,9 @@ if __name__ == "__main__":
 
     print("solver, activation, alpha, max_iter, mean_score, std_score")
         
+    # loop over all arguments of get_mlp_classifier for finding the best mean_score
     for solver, activation, alpha, max_iter in all_possible_tweakables_values:
         clf = get_mlp_classifier(solver, activation, alpha, hidden_layer_sizes=(5,2), max_iter=max_iter)
         mean_score, std_score = calculate_score_with_kfold(clf, X, y)
-        # print("Accuracy score: %.3f (%.3f)" % (mean_score, std_score))
+
         print(f'{solver}, {activation}, {alpha}, {max_iter}, {mean_score}, {std_score}')
