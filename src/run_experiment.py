@@ -14,9 +14,10 @@ import warnings
 
 import numpy as np
 from sklearn import svm
-from sklearn.feature_selection import chi2, SelectKBest 
+from sklearn.base import clone
+from sklearn.feature_selection import SelectKBest, chi2
 from sklearn.metrics import accuracy_score
-from sklearn.model_selection import KFold, train_test_split
+from sklearn.model_selection import KFold, RepeatedStratifiedKFold, train_test_split
 from sklearn.neural_network import MLPClassifier
 
 import parse_stroke_data_file
@@ -24,55 +25,75 @@ import parse_stroke_data_file
 # TODO: MANAGE WITH THIS SOMEHOW
 warnings.filterwarnings("ignore")
 
-def evaluate(clf, X, Y, n_splits=2, n_of_repeats=5, random_state=123):
-    '''
-    5  razy  powtarzana metody 2-krotna walidacja krzyżowa
-    '''
-    scores = []
-    kf = KFold(n_splits=n_splits, shuffle=True, random_state=random_state)
+# CONFIG
 
-    for i in range(n_of_repeats):
-        for train_index, test_index in kf.split(X):
-            X_train, X_test = X[train_index], X[test_index]
-            y_train, y_test = y[train_index], y[test_index]
-            clf.fit(X_train, y_train)
-            predict = clf.predict(X_test)
-            scores.append(accuracy_score(y_test, predict))
+"""
+Ewaluacja wykorzystanego klasyfikatora
+z wykorzystaniem 5 razy powtarzanej metody
+2-krotnej walidacji krzyżowej
+"""
+N_SPLITS = 2
+N_REPEATS = 5
 
-    mean_score = np.mean(scores)
-    std_score = np.std(scores)
+"""
+Badania należy przeprowadzić dla różnej
+liczby cech (poczynając od jednej - najlepszej
+wg. wyznaczonego rankingu, a następnie dokładać
+kolejno po jednej
+"""
+FEATURES_RANGE = range(1, 3)  # range(1,60)
 
-    return mean_score, std_score
-
-
-FEATURES_RANGE = range(1,60)
-HIDDEN_LAYER_SIZES = [20, 30, 40, 50, 60, 70, 80, 90, 100]
+"""
+Sieć jednokierunkowa z 1 warstwą ukrytą dla
+3 różnych liczb neuronów w warstwie ukrytej
+oraz dla uczenia metodą propagacji wstecznej
+z momentum i bez momentum
+"""
+HIDDEN_LAYER_SIZES = [2, 5, 7]  # [20, 30, 40, 50, 60, 70, 80, 90, 100]
 MOMENTUM_VALUES = [0.0, 0.9]
 
+# END OF CONFIG
+
+# def get_classifiers():
+
 if __name__ == "__main__":
+    classifiers = {}
     X, y = parse_stroke_data_file.get_dataset_x_y()
 
-    print('num_of_features,hidden_layer_size,momentum,mean_score,std_score')
-    '''
-    Badania należy przeprowadzić dla różnej
-    liczby cech (poczynając od jednej - najlepszej
-    wg. wyznaczonego rankingu, a następnie dokładać
-    kolejno po jednej
-    '''
     for num_of_features in FEATURES_RANGE:
-        X_new = SelectKBest(chi2, k=num_of_features).fit_transform(X, y)
+        for hidden_layer_size in HIDDEN_LAYER_SIZES:
+            for momentum_value in MOMENTUM_VALUES:
+                new_classifier = MLPClassifier(
+                    hidden_layer_sizes=(hidden_layer_size,), momentum=momentum_value
+                )
 
-        '''
-        sieć jednokierunkowa z 1 warstwą ukrytą 
-        dla 3  różnych  liczb neuronów w warstwie
-        ukrytej  oraz  dla uczenia metodą propagacji
-        wstecznej z momentum i bez momentum
-        '''
-        for hidden_layer_size in HIDDEN_LAYER_SIZES: # Mniej więcej pomiędzy rozmiarem liczby inputów i liczby outputów
-            for momentum in MOMENTUM_VALUES: # 0.9 to domyślna wartość z dokumentacji scikita
+                new_classifier.num_of_features = num_of_features
 
-                clf = MLPClassifier(hidden_layer_sizes=(hidden_layer_size,), momentum=momentum)
+                classifiers[
+                    f"features_{num_of_features}__hidden_{hidden_layer_size}__momentum_{momentum_value}"
+                ] = new_classifier
 
-                mean_score, std_score = evaluate(clf, X_new, y)
-                #       num_of_features             , hidden_layer_size, momentum, mean_score, std_score')
-                print(f'{num_of_features},{hidden_layer_size},{momentum},{mean_score:.8},{std_score:.8}')
+    rskf = RepeatedStratifiedKFold(
+        n_splits=N_SPLITS, n_repeats=N_REPEATS, random_state=42
+    )  # haha śmieszna liczba 42 haha
+
+    scores = np.zeros((len(classifiers), N_SPLITS * N_REPEATS))
+
+    for clf_id, clf_name in enumerate(classifiers):
+        X_new = SelectKBest(
+            chi2, k=classifiers[clf_name].num_of_features
+        ).fit_transform(X, y)
+
+        for fold_id, (train, test) in enumerate(rskf.split(X_new, y)):
+            clf = clone(classifiers[clf_name])
+            clf.fit(X[train], y[train])
+            y_pred = clf.predict(X[test])
+            scores[clf_id, fold_id] = accuracy_score(y[test], y_pred)
+
+    mean = np.mean(scores, axis=1)
+    std = np.std(scores, axis=1)
+
+    for clf_id, clf_name in enumerate(classifiers):
+        print("%s: %.3f (%.2f)" % (clf_name, mean[clf_id], std[clf_id]))
+
+    np.save("results", scores)
