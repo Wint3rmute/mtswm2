@@ -42,8 +42,8 @@ liczby cech (poczynając od jednej - najlepszej
 wg. wyznaczonego rankingu, a następnie dokładać
 kolejno po jednej
 """
-# FEATURES_RANGE = range(1,60)
-FEATURES_RANGE = range(1,3)
+FEATURES_RANGE = range(1,60)
+# FEATURES_RANGE = range(1,3)
 """
 Sieć jednokierunkowa z 1 warstwą ukrytą dla
 3 różnych liczb neuronów w warstwie ukrytej
