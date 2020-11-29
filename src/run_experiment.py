@@ -19,6 +19,7 @@ from sklearn.feature_selection import SelectKBest, chi2
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import KFold, RepeatedStratifiedKFold, train_test_split
 from sklearn.neural_network import MLPClassifier
+from tqdm import tqdm
 
 import parse_stroke_data_file
 
@@ -41,7 +42,7 @@ liczby cech (poczynając od jednej - najlepszej
 wg. wyznaczonego rankingu, a następnie dokładać
 kolejno po jednej
 """
-FEATURES_RANGE = range(1, 3)  # range(1,60)
+FEATURES_RANGE = range(1,60)
 
 """
 Sieć jednokierunkowa z 1 warstwą ukrytą dla
@@ -49,17 +50,14 @@ Sieć jednokierunkowa z 1 warstwą ukrytą dla
 oraz dla uczenia metodą propagacji wstecznej
 z momentum i bez momentum
 """
-HIDDEN_LAYER_SIZES = [2, 5, 7]  # [20, 30, 40, 50, 60, 70, 80, 90, 100]
+HIDDEN_LAYER_SIZES = [20, 50, 90]
 MOMENTUM_VALUES = [0.0, 0.9]
 
 # END OF CONFIG
 
-# def get_classifiers():
 
-if __name__ == "__main__":
+def get_classifiers():
     classifiers = {}
-    X, y = parse_stroke_data_file.get_dataset_x_y()
-
     for num_of_features in FEATURES_RANGE:
         for hidden_layer_size in HIDDEN_LAYER_SIZES:
             for momentum_value in MOMENTUM_VALUES:
@@ -73,13 +71,19 @@ if __name__ == "__main__":
                     f"features_{num_of_features}__hidden_{hidden_layer_size}__momentum_{momentum_value}"
                 ] = new_classifier
 
+    return classifiers
+
+
+if __name__ == "__main__":
+    X, y = parse_stroke_data_file.get_dataset_x_y()
     rskf = RepeatedStratifiedKFold(
         n_splits=N_SPLITS, n_repeats=N_REPEATS, random_state=42
     )  # haha śmieszna liczba 42 haha
+    classifiers = get_classifiers()
 
     scores = np.zeros((len(classifiers), N_SPLITS * N_REPEATS))
 
-    for clf_id, clf_name in enumerate(classifiers):
+    for clf_id, clf_name in tqdm(enumerate(classifiers)):
         X_new = SelectKBest(
             chi2, k=classifiers[clf_name].num_of_features
         ).fit_transform(X, y)
