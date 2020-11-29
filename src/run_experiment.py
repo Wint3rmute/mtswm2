@@ -1,4 +1,4 @@
-'''
+"""
     Nie byliśmy pewni, jakie podejście przyjąć, żeby
     zbudować sensowne środowisko eksperymentalne.
 
@@ -7,13 +7,14 @@
         - Wykorzystujemy k-krotną walidację krzyżową do oceny klasyfikatora
         - Napisaliśmy skrypt sprawdzający wiele mozliwych ustawień klasyfikatora MLP
         - Wyniki zapisywane są do pliku CSV, zamierzamy je później przeanalizować i znaleźć interesujące zakresy parametrów
-'''
+"""
 
 import itertools
 import warnings
 
 import numpy as np
 from sklearn import svm
+from sklearn.feature_selection import chi2, SelectKBest 
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import KFold, train_test_split
 from sklearn.neural_network import MLPClassifier
@@ -21,7 +22,7 @@ from sklearn.neural_network import MLPClassifier
 import parse_stroke_data_file
 
 # TODO: MANAGE WITH THIS SOMEHOW
-warnings.filterwarnings('ignore') 
+warnings.filterwarnings("ignore")
 
 # return MLPClassifier with custom arguments
 def get_mlp_classifier(
@@ -42,16 +43,20 @@ def get_mlp_classifier(
     )
 
 
-def calculate_score_with_kfold(clf, X, Y, n_splits=5, random_state=123):
+def evaluate(clf, X, Y, n_splits=2, n_of_repeats=5, random_state=123):
+    '''
+    5  razy  powtarzana metody 2-krotna walidacja krzyżowa
+    '''
     scores = []
     kf = KFold(n_splits=n_splits, shuffle=True, random_state=random_state)
 
-    for train_index, test_index in kf.split(X):
-        X_train, X_test = X[train_index], X[test_index]
-        y_train, y_test = y[train_index], y[test_index]
-        clf.fit(X_train, y_train)
-        predict = clf.predict(X_test)
-        scores.append(accuracy_score(y_test, predict))
+    for i in range(n_of_repeats):
+        for train_index, test_index in kf.split(X):
+            X_train, X_test = X[train_index], X[test_index]
+            y_train, y_test = y[train_index], y[test_index]
+            clf.fit(X_train, y_train)
+            predict = clf.predict(X_test)
+            scores.append(accuracy_score(y_test, predict))
 
     mean_score = np.mean(scores)
     std_score = np.std(scores)
@@ -61,26 +66,28 @@ def calculate_score_with_kfold(clf, X, Y, n_splits=5, random_state=123):
 
 if __name__ == "__main__":
     X, y = parse_stroke_data_file.get_dataset_x_y()
-    # print(X.shape, y.shape)
 
-    # Tweakables
-    solver = ["lbfgs", "sgd", "adam"]
-    activation = ["identity", "logistic", "tanh", "relu"]
-    alpha = [1e-4, 1e-5, 1e-6]
-    # hidden_layer_sizes = list(itertools.product(*[ list(range(1,10)) , list(range(1,10))] ))
-    max_iter = list(np.arange(100, 10000, 100))
+    print('num_of_features, hidden_layer_size, momentum, mean_score, std_score')
+    '''
+    Badania należy przeprowadzić dla różnej
+    liczby cech (poczynając od jednej - najlepszej
+    wg. wyznaczonego rankingu, a następnie dokładać
+    kolejno po jednej
+    '''
+    for num_of_features in range(1, 60):
+        X_new = SelectKBest(chi2, k=num_of_features).fit_transform(X, y)
 
-    all_tweakables = [solver, activation, alpha, max_iter]
-    all_possible_tweakables_values = itertools.product(*all_tweakables)
+        '''
+        sieć jednokierunkowa z 1 warstwą ukrytą 
+        dla 3  różnych  liczb neuronów w warstwie
+        ukrytej  oraz  dla uczenia metodą propagacji
+        wstecznej z momentum i bez momentum
+        '''
+        for hidden_layer_size in [20, 30, 40]: # Mniej więcej pomiędzy rozmiarem liczby inputów i liczby outputów
+            for momentum in [0.0, 0.9]: # 0.9 to domyślna wartość z dokumentacji scikita
 
-    # print(len(list(all_possible_tweakables_values)))
-    # exit()
+                clf = MLPClassifier(hidden_layer_sizes=(hidden_layer_size,), momentum=momentum)
 
-    print("solver, activation, alpha, max_iter, mean_score, std_score")
-        
-    # loop over all arguments of get_mlp_classifier for finding the best mean_score
-    for solver, activation, alpha, max_iter in all_possible_tweakables_values:
-        clf = get_mlp_classifier(solver, activation, alpha, hidden_layer_sizes=(5,2), max_iter=max_iter)
-        mean_score, std_score = calculate_score_with_kfold(clf, X, y)
-
-        print(f'{solver}, {activation}, {alpha}, {max_iter}, {mean_score}, {std_score}')
+                mean_score, std_score = evaluate(clf, X_new, y)
+                #       num_of_features             , hidden_layer_size, momentum, mean_score, std_score')
+                print(f'{num_of_features},               {hidden_layer_size},                {momentum},      {mean_score:.8}, {std_score:.8}')
