@@ -6,12 +6,22 @@
 
 - [x] Pierwsze zajęcia: Wprowadzenie do projektu, wybór tematów oraz grup projektowych.
 - [x] Drugie zajęcia: Opis problemu medycznego jako zadania klasyfikacji oraz wyznaczenie rankingu cech pod względem ich przydatności do klasyfikacji.
-- [ ] Trzecie zajęcia: Implementacja środowiska eksperymentowania.
-- [ ] Czwarte zajęcia: Przedstawienie wstępnych wyników eksperymentów oraz testów statystycznych. Próba sformułowania pierwszych wniosków.
-- [ ] Piąte zajęcia: Oddanie finalnej wersji projektu
+- [x] Trzecie zajęcia: Implementacja środowiska eksperymentowania.
+- [x] Czwarte zajęcia: Przedstawienie wstępnych wyników eksperymentów oraz testów statystycznych. Próba sformułowania pierwszych wniosków.
+- [x] Piąte zajęcia: Oddanie finalnej wersji projektu
+
+# Struktura
+
+Folder `src` zawiera:
+
+- Skrypt `parse_stroke_data_file.py`, wczytujący dataset do formatu zgodnego z `scikit-learn`
+- Jupyter notebook `experiment.ipynb`, przeprowadzający eksperyment według opisu z zasad zaliczenia projektu
+- Skrypty, które napisaliśmy podczas pisania projektu, w ramach nauki/próby podejścia do zadań projektowych (wszystkie pozostałe pliki)
+
+Folder `stroke_data` zawiera zbiór danych, otrzymany na pierwszych zajęciach.
 
 
-# Dataset features in a microshit-free document format
+# Dataset features in a microsoft-free document format
 
 MYOCARDIAL INFARCTION DIAGNOSIS
 
